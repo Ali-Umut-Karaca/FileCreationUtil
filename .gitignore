@@ -1,0 +1,9 @@
+# Ignore compiled Windows binaries
+*.exe
+
+# Ignore intermediate object files
+*.o
+*.obj
+
+# Ignore PowerShell scripts (handled via GitHub Releases)
+*.ps1
