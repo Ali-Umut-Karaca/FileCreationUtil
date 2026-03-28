@@ -21,16 +21,24 @@ void printArgs(int args[]);
 
 
 //DEFINITION LIST:
+
+#define COLOR_RED     "\033[0;31m"
+#define COLOR_GREEN   "\033[0;32m"
+#define COLOR_YELLOW  "\033[0;33m"
+#define COLOR_CYAN    "\033[0;36m"
+#define COLOR_RESET   "\033[0m"
+
 #define TYPE "e"
 #define INIT "i"
 #define NAME "n"
-#define DEL "del"
+#define PATH "p"
 #define OP "o"
 #define ARGUMENT_COUNT 5
 #define MAX_PATH_LENGTH 1024
 //
 
 int debugFlag = 0; // 1 is on, 0 is off
+int pathFlag = 0; // If the 
 int isOpenDirectory = 0; // Flag for directory opening on 
 int state = 0; //0 -> Name, 1-> extention, 2-> initialization
 int realizedArgumentCount = 0;
@@ -43,6 +51,7 @@ int argsPos [ARGUMENT_COUNT];
 char extention[8];
 char name[248];
 char fullName[256];
+char specifiedPath[1024];
 //
 
 
@@ -53,14 +62,14 @@ int main (int argc, char **args){
     realizedArgumentCount = (argc-1)/2;                                    //double res = ceil(((double)argc-1)/2); //Actually realized argument amount arithmetic
                                                                           //realizedArgumentCount = (int) res;
     if(realizedArgumentCount>ARGUMENT_COUNT){
-        printf("TOO MANY ARGUMENTS ENTERED !");
+        printf("%sTOO MANY ARGUMENTS ENTERED !%s\n",COLOR_RED,COLOR_RESET);
         return -1;
     }
     
     debuggerD(argc,debugFlag);
     
     if(argumentParser(args) == -1){ // Parse Commands into a poor man's Hashmap (argumentMap)
-        printf("OPERATION TERMINATING...");
+        printf("%sOPERATION TERMINATING...%s",COLOR_RED,COLOR_RESET);
         return -1;
     }
    debuggerS("I worked after parse !","",debugFlag);
@@ -100,15 +109,30 @@ int main (int argc, char **args){
         //    printf("Parsed INIT flag.\n");
         }
         
+        else if(strcmp(PATH, argumentMap[i].key) == 0){
+            pathFlag = 1;
+
+            DWORD fileAttributes = GetFileAttributesA(argumentMap[i].value);
+
+            if (fileAttributes != INVALID_FILE_ATTRIBUTES) {
+                strcpy(specifiedPath,argumentMap[i].value);
+            } else {
+                printf("%sINVALID PATH: '%s'%s\n",COLOR_RED,argumentMap[i].value,COLOR_RESET);
+                return -1;
+            }
+
+               
+        }
+        
         else {
-            printf("Warning: Unknown argument key '%s' ignored.\n", argumentMap[i].key);
+            printf("%sWarning: Unknown argument key %s'%s' %signored.%s\n", COLOR_YELLOW, COLOR_RESET, argumentMap[i].key, COLOR_YELLOW, COLOR_RESET);
         }
     }
 
 
-    printf("\n--- Final Configuration ---\n");
-    printf("Name: %s\n", name);
-    printf("Extension: %s\n", extention);
+    printf("\n%s--- Final Configuration ---%s\n",COLOR_CYAN,COLOR_RESET);
+    printf("Name: %s'%s'%s\n",COLOR_CYAN, name, COLOR_RESET);
+    printf("Extension: %s'%s'%s\n",COLOR_CYAN, extention, COLOR_RESET);
 
 
     if (shouldInit) {
@@ -143,7 +167,7 @@ int argumentParser(char **args){
                 tokens = strtok(NULL, "-");
                 }
                 else{
-                    printf("TOO MANY ARGUMENTS ENTERED, ONLY %d ARGUMENTS ALLOWED\n",ARGUMENT_COUNT);
+                    printf("%sTOO MANY ARGUMENTS ENTERED, ONLY %d ARGUMENTS ALLOWED\n%s",COLOR_RED,ARGUMENT_COUNT,COLOR_RESET);
                     return -1;
                 }
             }
@@ -193,26 +217,35 @@ void printKeyValuePairs(Map map[]){
 }
 
 void writeCreateFile(char *text){
-    strcpy(fullName,name);
-    strcat(fullName,extention);
-    char currentDirectory[MAX_PATH_LENGTH];
-    _getcwd(currentDirectory, MAX_PATH_LENGTH);
-    strcat(currentDirectory,"\\");
-    char currentDir[256];
+    strcpy(fullName,name); // Add name to the fullName
+    strcat(fullName,extention); // Add extension to the fullName
+    char currentDirectory[MAX_PATH_LENGTH]; // Allocate memory to get Path in Stack
+    _getcwd(currentDirectory, MAX_PATH_LENGTH); // Get the Current Directory Path
+    char currentDir[MAX_PATH_LENGTH]; // Allocate enough memory to store the directory path
 
-    strcpy(currentDir,currentDirectory);
+    char fullPath[1024]; // Space allocated for Full path with the file.
 
-    char fullPath[1024];
-    strcpy(fullPath,strcat(currentDirectory,fullName));
-    FILE *fp = fopen(fullPath,"a+");
-    printf("Path = '%s'\n",fullPath);
-    if(fp == NULL){
-        printf("THERE WAS AN ERROR OPENING THE FILE");
+     if(pathFlag == 1){ //Change path is any is pre-Specified
+        strcpy(currentDirectory,specifiedPath);
     }
 
-    fprintf(fp, text);
+    strcat(currentDirectory,"\\"); // Add the '\' at the end of the Current Directory Path
 
-    fclose(fp);
+    strcpy(currentDir,currentDirectory); // Copy the full path to the DIRECTORY for later use
+
+    strcpy(fullPath,strcat(currentDirectory,fullName)); // First attach fullName to currentDirectory and then Copy the new string to fullPath
+    FILE *fp = fopen(fullPath,"a+"); // Open the file in Append+ mode.
+    printf("Path = %s'%s'%s\n", COLOR_CYAN, fullPath, COLOR_RESET); //Print the whole file path to the terminal for the user to see.
+
+    if(fp == NULL){
+        printf("\n%sTHERE WAS AN ERROR OPENING / CREATING THE FILE%s\n",COLOR_RED,COLOR_RESET);
+    }
+
+   
+
+    fprintf(fp, text); // Put the text into the file
+
+    fclose(fp); // Close off the file
 
     if(isOpenDirectory == 1)
         openDirectory(currentDir);
@@ -232,11 +265,11 @@ int openDirectory(char *path){
 
     // ShellExecute returns a value greater than 32 if it succeeds
     if ((INT_PTR)result <= 32) {
-        printf("Failed to open directory.\n");
+        printf("%sFailed to open directory.%s\n",COLOR_RED,COLOR_RESET);
         return -1;
     }
 
-    printf("Directory opened successfully!\n");
+    printf("%sDirectory opened successfully!%s\n",COLOR_GREEN,COLOR_RESET);
     return 0;
 
 
