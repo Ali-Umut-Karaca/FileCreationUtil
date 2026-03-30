@@ -10,6 +10,7 @@ typedef struct Map{
     char value[2048];    
 }Map;
 
+int grepLogic(char *str);
 int openDirectory(char *path);
 int debuggerS(char *debugInfo,char *dbg, int shouldPrint);
 int debuggerD(int debugInfo, int shouldPrint);
@@ -18,7 +19,8 @@ void printKeyValuePair(Map map);
 void printKeyValuePairs(Map map[]);
 void writeCreateFile(char *text);
 void printArgs(int args[]);
-
+int overrideChecker(char *path);
+int openFile(char *path);
 
 //DEFINITION LIST:
 
@@ -27,25 +29,30 @@ void printArgs(int args[]);
 #define COLOR_YELLOW  "\033[0;33m"
 #define COLOR_CYAN    "\033[0;36m"
 #define COLOR_RESET   "\033[0m"
-
 #define TYPE "e"
 #define INIT "i"
 #define NAME "n"
 #define PATH "p"
-#define OP "o"
-#define ARGUMENT_COUNT 5
+#define OF "of"
+#define OD "od"
+#define ARGUMENT_COUNT 6
 #define MAX_PATH_LENGTH 1024
 //
 
+
+// DECLARE AND INITIALIZE VARIABLES:
 int debugFlag = 0; // 1 is on, 0 is off
-int pathFlag = 0; // If the 
-int isOpenDirectory = 0; // Flag for directory opening on 
+int pathFlag = 0; // If the path has been set by the user specifically, turn the bit to 1
+int isOpenFile = 0; // If this flag is set, open up the file that's just been created. command: -of
+int isOpenDirectory = 0; // Flag for directory opening on -do command 
 int state = 0; //0 -> Name, 1-> extention, 2-> initialization
 int realizedArgumentCount = 0;
 int argumentCounter = 0;
 Map argumentMap [ARGUMENT_COUNT];
 char argumentTokens[ARGUMENT_COUNT][256];
 int argsPos [ARGUMENT_COUNT];
+char fullPath[1024]; // Space allocated for Full path with the file.
+//
 
 //FILE INFO:
 char extention[8];
@@ -98,7 +105,7 @@ int main (int argc, char **args){
         //    printf("Parsed TYPE: %s\n", extention);
         }
 
-        else if(strcmp(OP, argumentMap[i].key) == 0){
+        else if(strcmp(OD, argumentMap[i].key) == 0){
             debuggerS("I worked for OP","",debugFlag);
             isOpenDirectory = 1;   
         }
@@ -123,24 +130,33 @@ int main (int argc, char **args){
 
                
         }
-        
+	else if(strcmp(OF, argumentMap[i].key) == 0){
+            debuggerS("I worked for OP","",debugFlag);
+            isOpenFile = 1;   
+        }
         else {
-            printf("%sWarning: Unknown argument key %s'%s' %signored.%s\n", COLOR_YELLOW, COLOR_RESET, argumentMap[i].key, COLOR_YELLOW, COLOR_RESET);
+            printf("%sWarning: Unknown argument key %s'%s' %signored.%s\n", COLOR_YELLOW,
+		   COLOR_RESET,
+		   argumentMap[i].key,
+		   COLOR_YELLOW,
+		   COLOR_RESET);
         }
     }
 
 
-    printf("\n%s--- Final Configuration ---%s\n",COLOR_CYAN,COLOR_RESET);
-    printf("Name: %s'%s'%s\n",COLOR_CYAN, name, COLOR_RESET);
-    printf("Extension: %s'%s'%s\n",COLOR_CYAN, extention, COLOR_RESET);
-
-
-    if (shouldInit) {
+     if (shouldInit) {
         writeCreateFile(initValue);
     } else {
         writeCreateFile(""); 
     }
-       // printf("fn: %s, name -> %s, ext -> %s\n",fullName, name, extention);
+     
+    printf("\n%s--- Final Configuration ---%s\n",COLOR_CYAN,COLOR_RESET);
+    printf("Name: %s'%s'%s\n",COLOR_CYAN, name, COLOR_RESET);
+    printf("Extension: %s'%s'%s\n",COLOR_CYAN, extention, COLOR_RESET);
+    printf("Path = %s'%s'%s\n", COLOR_CYAN, fullPath, COLOR_RESET); //Print the whole file path to the terminal for the user to see.
+
+
+   
     return 0;
 }
 
@@ -223,9 +239,8 @@ void writeCreateFile(char *text){
     _getcwd(currentDirectory, MAX_PATH_LENGTH); // Get the Current Directory Path
     char currentDir[MAX_PATH_LENGTH]; // Allocate enough memory to store the directory path
 
-    char fullPath[1024]; // Space allocated for Full path with the file.
-
-     if(pathFlag == 1){ //Change path is any is pre-Specified
+    
+     if(pathFlag == 1){ //Change path if any is pre-Specified
         strcpy(currentDirectory,specifiedPath);
     }
 
@@ -234,9 +249,16 @@ void writeCreateFile(char *text){
     strcpy(currentDir,currentDirectory); // Copy the full path to the DIRECTORY for later use
 
     strcpy(fullPath,strcat(currentDirectory,fullName)); // First attach fullName to currentDirectory and then Copy the new string to fullPath
-    FILE *fp = fopen(fullPath,"a+"); // Open the file in Append+ mode.
-    printf("Path = %s'%s'%s\n", COLOR_CYAN, fullPath, COLOR_RESET); //Print the whole file path to the terminal for the user to see.
 
+    int override = overrideChecker(fullPath); // If the return value is 1, we proceed to override / create file. If the return is -1, don't override it and terminate.
+
+    if(override == -1){
+      printf("\nOverride command not accepted. Process terminating...\n");
+      exit(1);
+    }
+    
+    FILE *fp = fopen(fullPath,"a+"); // Open the file in Append+ mode.
+    
     if(fp == NULL){
         printf("\n%sTHERE WAS AN ERROR OPENING / CREATING THE FILE%s\n",COLOR_RED,COLOR_RESET);
     }
@@ -248,10 +270,12 @@ void writeCreateFile(char *text){
     fclose(fp); // Close off the file
 
     if(isOpenDirectory == 1)
-        openDirectory(currentDir);
+      openDirectory(currentDir); //Change the state variable, add -of, -od difference.
+    if(isOpenFile == 1)
+      openFile(fullPath);
 
-
-
+    printf("%sFile created/appended successfully!%s\n",COLOR_GREEN,COLOR_RESET);
+    
 
 }
 
@@ -269,11 +293,55 @@ int openDirectory(char *path){
         return -1;
     }
 
-    printf("%sDirectory opened successfully!%s\n",COLOR_GREEN,COLOR_RESET);
+    //    printf("%sDirectory opened successfully!%s\n",COLOR_GREEN,COLOR_RESET);
     return 0;
 
 
 }
+
+
+int grepLogic(char *str){
+
+  
+  return 0;
+}
+
+int openFile(char *path){
+  char fh [MAX_PATH_LENGTH + 15];
+  strcpy(fh,"start \"\" \"");
+  strcat(fh,path);
+  system(fh);
+    return 0;
+}
+
+int overrideChecker(char *path){
+  char input [2];
+  strcpy(&input[1],"\0"); // ADD NULL TERMINATOR STRING
+  FILE *myFile = fopen(path, "r");
+
+  if(myFile != NULL){
+    printf("%sWARNING: THIS FILE SEEMS TO ALREADY EXIST%s\n",COLOR_YELLOW,COLOR_RESET);
+    printf("Are you sure you would like to append to this file ? (y/n):");
+    scanf("%s",input);
+    if(strcmp(input,"y")== 0){
+      fclose(myFile);
+      return 1;
+    }
+    else if(strcmp(input,"n") == 0){
+      fclose(myFile);
+      return -1;
+    }
+  }
+  else{
+    return 1;
+  }
+  
+  fclose(myFile);
+  return 0;
+  
+}
+
+
 
 int debuggerS(char *debugInfo, char*dbg, int shouldPrint){
     if(shouldPrint == 1){
