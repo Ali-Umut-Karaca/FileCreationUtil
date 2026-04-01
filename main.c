@@ -21,7 +21,7 @@ void writeCreateFile(char *text);
 void printArgs(int args[]);
 int overrideChecker(char *path);
 int openFile(char *path);
-
+void printHelpScreen();
 //DEFINITION LIST:
 
 #define COLOR_RED     "\033[0;31m"
@@ -35,7 +35,8 @@ int openFile(char *path);
 #define PATH "p"
 #define OF "of"
 #define OD "od"
-#define ARGUMENT_COUNT 6
+#define HELP "help"
+#define ARGUMENT_COUNT 7
 #define MAX_PATH_LENGTH 1024
 //
 
@@ -106,7 +107,7 @@ int main (int argc, char **args){
         }
 
         else if(strcmp(OD, argumentMap[i].key) == 0){
-            debuggerS("I worked for OP","",debugFlag);
+            debuggerS("I worked for OD","",debugFlag);
             isOpenDirectory = 1;   
         }
         
@@ -131,8 +132,12 @@ int main (int argc, char **args){
                
         }
 	else if(strcmp(OF, argumentMap[i].key) == 0){
-            debuggerS("I worked for OP","",debugFlag);
+            debuggerS("I worked for OF","",debugFlag);
             isOpenFile = 1;   
+        }
+	else if(strcmp(HELP, argumentMap[i].key) == 0){
+            debuggerS("I worked for HELP","",debugFlag);
+	    printHelpScreen();
         }
         else {
             printf("%sWarning: Unknown argument key %s'%s' %signored.%s\n", COLOR_YELLOW,
@@ -361,4 +366,19 @@ int debuggerD(int debugInfo, int shouldPrint){
     }
     else
         return 0;
+}
+
+void printHelpScreen(){
+  char *sp = "-\n";
+  printf("\n%s~~~~~~~~~~~~~~~COMMANDS AVAILABLE FOR USE~~~~~~~~~~~~~~~%s\n",COLOR_CYAN,COLOR_RESET);
+  printf("|-help: to pull up this documentation\n|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s", sp,
+	 "|-n: to name the file as desired. If this field's left empty, the default name is going to be 'tmp'.\n", sp,
+	 "|-e: to give a file the desired extension. If this field's left empty, the default extension is going to be '.txt'.\n", sp,
+	 "|-i: to give a file the desired initialization. It will create the file and write in it the provided text. (Limit: 1024 characters)\n", sp,
+	 "|-of: to open up the crated file after creating it.\n", sp,
+	 "|-od: to open up the created file's directory after it's been created.\n", sp,
+	 "|-p: to provide a custom ABSOLUTE path for the program to create the file in.\n"
+	 );
+  printf("%s~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s",COLOR_CYAN,COLOR_RESET);
+  exit(1);
 }
