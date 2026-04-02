@@ -68,7 +68,7 @@ char specifiedPath[1024];
 int main (int argc, char **args){
     argumentCounter = argc;//Inititalize global variable
     realizedArgumentCount = (argc-1)/2;                                    //double res = ceil(((double)argc-1)/2); //Actually realized argument amount arithmetic
-                                                                          //realizedArgumentCount = (int) res;
+                                                                         //realizedArgumentCount = (int) res;
     if(realizedArgumentCount>ARGUMENT_COUNT){
         printf("%sTOO MANY ARGUMENTS ENTERED !%s\n",COLOR_RED,COLOR_RESET);
         return -1;
@@ -320,22 +320,51 @@ int openFile(char *path){
 }
 
 int overrideChecker(char *path){
-  char input [2];
-  strcpy(&input[1],"\0"); // ADD NULL TERMINATOR STRING
+  char input [3];
+  int validationFlag = 0;
+  //strcpy(&input[1],"\0"); // ADD NULL TERMINATOR STRING
   FILE *myFile = fopen(path, "r");
 
   if(myFile != NULL){
     printf("%sWARNING: THIS FILE SEEMS TO ALREADY EXIST%s\n",COLOR_YELLOW,COLOR_RESET);
     printf("Are you sure you would like to append to this file ? (y/n):");
-    scanf("%s",input);
-    if(strcmp(input,"y")== 0){
-      fclose(myFile);
-      return 1;
-    }
-    else if(strcmp(input,"n") == 0){
-      fclose(myFile);
-      return -1;
-    }
+
+    while(validationFlag != 1){
+      if(fgets(input, sizeof(input), stdin) != NULL){
+	if (strchr(input, '\n') == NULL) { // Checks for buffer overflows
+	  printf("Please only enter 'y' or 'n':\n"); 
+		int c;
+                while ((c = getchar()) != '\n' && c != EOF); // In case of buffer overflows, empty out the stdin buffer.
+                
+                continue; // Continue to next itiration.
+	}
+	if (input[0] == '\n') { // If user leaves the input buffer empty.
+	  printf("Please enter 'y' or 'n' to proceed:");
+                continue;
+            }
+		
+    
+	 if(input[0] == 'y'){
+	   fclose(myFile);
+	   return 1;
+	 }
+	 else if(input[0]== 'n'){
+	   fclose(myFile);
+	   return -1;
+	 }
+	 else if(input[0]== 'N'){
+	   fclose(myFile);
+	   return -1;
+	 }
+	 else if(input[0]== 'Y'){
+	   fclose(myFile);
+	   return 1;
+	 }
+	 else
+	   printf("Please enter 'n' or 'y' to proceed:");
+
+      } //fgets paranthesis.
+    } // validation Flag paranthesis.
   }
   else{
     return 1;
