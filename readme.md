@@ -1,4 +1,4 @@
-I have decided to write this little project because windows wouldn't let me crate files hastily with the extensions that I want. So, I resorted to the only way I thought it could be fixed. Which is by writing my own File Creation Utility (fcu) tool in C.
+I have decided to write this little project because windows wouldn't let me create files hastily with the extensions that I want. So, I resorted to the only way I thought it could be fixed. Which is by writing my own File Creation Utility (fcu) tool in C.
 
 I have used a bunch of different things in this program, such as a poor man's hash map or a tiny tokenizer which makes tokens and  then assigns these tokens with their respective meanings using the map we have. I tried to build the architecture to specifically be very fast and lightweight as much as I can. Since speed is of the essence, I don't do any Run-time allocations, there could be some memory overhead that Might happen. Given, it is in insignificant amounts. 
 
