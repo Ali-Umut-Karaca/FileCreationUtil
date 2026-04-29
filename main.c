@@ -10,6 +10,8 @@ typedef struct Map{
     char value[2048];    
 }Map;
 
+
+
 int grepLogic(char *str);
 int openDirectory(char *path);
 int debuggerS(char *debugInfo,char *dbg, int shouldPrint);
@@ -17,7 +19,7 @@ int debuggerD(int debugInfo, int shouldPrint);
 int argumentParser(char **args);
 void printKeyValuePair(Map map);
 void printKeyValuePairs(Map map[]);
-void writeCreateFile(char *text);
+void writeCreateFile(char *t);
 void printArgs(int args[]);
 int overrideChecker(char *path);
 int openFile(char *path);
@@ -38,6 +40,7 @@ void printHelpScreen();
 #define HELP "help"
 #define ARGUMENT_COUNT 7
 #define MAX_PATH_LENGTH 1024
+#define MAX_ARGUMENT_LENGTH 2048
 //
 
 
@@ -52,14 +55,22 @@ int argumentCounter = 0;
 Map argumentMap [ARGUMENT_COUNT];
 char argumentTokens[ARGUMENT_COUNT][256];
 int argsPos [ARGUMENT_COUNT];
-char fullPath[1024]; // Space allocated for Full path with the file.
+char fullPath[MAX_PATH_LENGTH]; // Space allocated for Full path with the file.
 //
 
+typedef struct FileInfo{
+  char extention[255];
+  char name[255];
+  char fullName[255];
+  char specifiedPath[MAX_PATH_LENGTH];
+}FileInfo;
+
 //FILE INFO:
-char extention[8];
+/*char extention[8];
 char name[248];
 char fullName[256];
-char specifiedPath[1024];
+char specifiedPath[MAX_PATH_LENGTH];*/ //DEPRECATED
+FileInfo fileInfo;
 //
 
 
@@ -82,9 +93,9 @@ int main (int argc, char **args){
     }
    debuggerS("I worked after parse !","",debugFlag);
 
-    strcpy(name, "tmp");
-    strcpy(extention, ".txt");
-    char initValue[2048]; 
+    strcpy(fileInfo.name, "tmp");
+    strcpy(fileInfo.extention, ".txt");
+    char initValue[MAX_ARGUMENT_LENGTH]; 
     int shouldInit = 0;       // A simple flag to check if INIT was called
     
     int i = 0;
@@ -94,14 +105,14 @@ int main (int argc, char **args){
 
         if(strcmp(NAME, argumentMap[i].key) == 0) {
             if(strcmp(argumentMap[i].value, "") != 0) {
-                strcpy(name, argumentMap[i].value);
+	      strncpy(fileInfo.name, argumentMap[i].value,255); // Windows allows a max of 202 chars for file names.
             }
         //    printf("Parsed NAME: %s\n", name);
         }
         
         else if(strcmp(TYPE, argumentMap[i].key) == 0) {
             if(strcmp(argumentMap[i].value, "") != 0) {
-                strcpy(extention, argumentMap[i].value);
+	      strncpy(fileInfo.extention, argumentMap[i].value,6); // Max length of an extension is 8 bytes.
             }
         //    printf("Parsed TYPE: %s\n", extention);
         }
@@ -112,7 +123,7 @@ int main (int argc, char **args){
         }
         
         else if(strcmp(INIT, argumentMap[i].key) == 0) {
-            strcpy(initValue, argumentMap[i].value);
+	  strncpy(initValue, argumentMap[i].value, MAX_ARGUMENT_LENGTH); //strncpy -> safe way to copy entered argument
             shouldInit = 1; 
         //    printf("Parsed INIT flag.\n");
         }
@@ -123,7 +134,8 @@ int main (int argc, char **args){
             DWORD fileAttributes = GetFileAttributesA(argumentMap[i].value);
 
             if (fileAttributes != INVALID_FILE_ATTRIBUTES) {
-                strcpy(specifiedPath,argumentMap[i].value);
+	      //printf("strlen: %lld",strlen(argumentMap[i].value));
+	      strncpy(fileInfo.specifiedPath,argumentMap[i].value, 255); //255 MAX
             } else {
                 printf("%sINVALID PATH: '%s'%s\n",COLOR_RED,argumentMap[i].value,COLOR_RESET);
                 return -1;
@@ -148,6 +160,7 @@ int main (int argc, char **args){
         }
     }
 
+    
 
      if (shouldInit) {
         writeCreateFile(initValue);
@@ -156,8 +169,8 @@ int main (int argc, char **args){
     }
      
     printf("\n%s--- Final Configuration ---%s\n",COLOR_CYAN,COLOR_RESET);
-    printf("Name: %s'%s'%s\n",COLOR_CYAN, name, COLOR_RESET);
-    printf("Extension: %s'%s'%s\n",COLOR_CYAN, extention, COLOR_RESET);
+    printf("Name: %s'%s'%s\n",COLOR_CYAN, fileInfo.name, COLOR_RESET);
+    printf("Extension: %s'%s'%s\n",COLOR_CYAN, fileInfo.extention, COLOR_RESET);
     printf("Path = %s'%s'%s\n", COLOR_CYAN, fullPath, COLOR_RESET); //Print the whole file path to the terminal for the user to see.
 
 
@@ -209,9 +222,10 @@ int argumentParser(char **args){
             continue;
         }
 
-        if((*(args+argsPos[k]))[0] != '-' && *(args+argsPos[k]) != NULL)
-            strncpy(argumentMap[k].value,*(args+argsPos[k]),256);
-        debuggerS(argumentMap[k].key,"",debugFlag);
+        if((*(args+argsPos[k]))[0] != '-' && *(args+argsPos[k]) != NULL){
+	  strncpy(argumentMap[k].value,*(args+argsPos[k]),MAX_ARGUMENT_LENGTH);
+	  debuggerS(argumentMap[k].key,"",debugFlag);
+	}
         //printf("argumentTokens(%d): '%s'\n", k,argumentTokens[k]);
     }
     //printKeyValuePairs(argumentMap);
@@ -238,34 +252,47 @@ void printKeyValuePairs(Map map[]){
 }
 
 void writeCreateFile(char *text){
-    strcpy(fullName,name); // Add name to the fullName
-    strcat(fullName,extention); // Add extension to the fullName
+  strncpy(fileInfo.fullName,fileInfo.name,strlen(fileInfo.name)); // Add name to the fullName
+    strcat(fileInfo.fullName,fileInfo.extention); // Add extension to the fullName
     char currentDirectory[MAX_PATH_LENGTH]; // Allocate memory to get Path in Stack
     _getcwd(currentDirectory, MAX_PATH_LENGTH); // Get the Current Directory Path
     char currentDir[MAX_PATH_LENGTH]; // Allocate enough memory to store the directory path
 
     
      if(pathFlag == 1){ //Change path if any is pre-Specified
-        strcpy(currentDirectory,specifiedPath);
+       strncpy(currentDirectory,fileInfo.specifiedPath,255); //255 MAX
     }
 
     strcat(currentDirectory,"\\"); // Add the '\' at the end of the Current Directory Path
 
-    strcpy(currentDir,currentDirectory); // Copy the full path to the DIRECTORY for later use
+    strncpy(currentDir,currentDirectory,strlen(currentDirectory)); // Copy the full path to the DIRECTORY for later use
+    //strcat(currentDir,"\0");
 
-    strcpy(fullPath,strcat(currentDirectory,fullName)); // First attach fullName to currentDirectory and then Copy the new string to fullPath
+    strcpy(fullPath,strcat(currentDirectory,fileInfo.fullName)); // First attach fullName to currentDirectory and then Copy the new string to fullPath
 
-    int override = overrideChecker(fullPath); // If the return value is 1, we proceed to override / create file. If the return is -1, don't override it and terminate.
+    int override = overrideChecker(fullPath); // If the return value is 1, we proceed to override / create . If the return is -1, don't override it and terminate.
 
     if(override == -1){
       printf("\nOverride command not accepted. Process terminating...\n");
       exit(1);
     }
-    
+    int fileNameCount = strlen(fullPath);
+    // printf("\n fileNameCount In Func: %d\n", fileNameCount);
+
+    int pathLength = strlen(currentDir);
     FILE *fp = fopen(fullPath,"a+"); // Open the file in Append+ mode.
+
+    if(fileNameCount >255){
+      printf("%sFILE COULDN'T BE OPENED / CREATED. CODE: FNTL001%s\n",COLOR_YELLOW,COLOR_RESET);
+      printf("\n%sPLEASE LIMIT YOUR FILE NAME WITH EXTENSION TO: %s%d (Your file name length: %lld)%s\n",COLOR_YELLOW,COLOR_GREEN,(255-pathLength),strlen(fileInfo.fullName),COLOR_RESET);
+      printf("\npath ->%s, len -> %d\n",currentDir, pathLength);
+      printf("\nfullName->%s\n",fileInfo.fullName);
+      exit(-1);
+    }
     
     if(fp == NULL){
         printf("\n%sTHERE WAS AN ERROR OPENING / CREATING THE FILE%s\n",COLOR_RED,COLOR_RESET);
+	exit(-1);
     }
 
    
@@ -285,11 +312,11 @@ void writeCreateFile(char *text){
 }
 
 int openDirectory(char *path){
-    char targetDirectory[256];
+    char targetDirectory[255];
 
     strcpy(targetDirectory, path);
     
-
+    debuggerS(targetDirectory, path, debugFlag);
     HINSTANCE result = ShellExecuteA(NULL, "open", targetDirectory, NULL, NULL, SW_SHOWNORMAL); // Open File
 
     // ShellExecute returns a value greater than 32 if it succeeds
@@ -312,7 +339,7 @@ int grepLogic(char *str){
 }
 
 int openFile(char *path){
-  char fh [MAX_PATH_LENGTH + 15];
+  char fh [MAX_PATH_LENGTH + 15]; // 15 for command initialization
   strcpy(fh,"start \"\" \"");
   strcat(fh,path);
   system(fh);
@@ -400,13 +427,14 @@ int debuggerD(int debugInfo, int shouldPrint){
 void printHelpScreen(){
   char *sp = "-\n";
   printf("\n%s~~~~~~~~~~~~~~~COMMANDS AVAILABLE FOR USE~~~~~~~~~~~~~~~%s\n",COLOR_CYAN,COLOR_RESET);
-  printf("|-help: to pull up this documentation\n|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s", sp,
+  printf("|-help: to pull up this documentation\n|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s", sp,
 	 "|-n: to name the file as desired. If this field's left empty, the default name is going to be 'tmp'.\n", sp,
 	 "|-e: to give a file the desired extension. If this field's left empty, the default extension is going to be '.txt'.\n", sp,
 	 "|-i: to give a file the desired initialization. It will create the file and write in it the provided text. (Limit: 1024 characters)\n", sp,
 	 "|-of: to open up the crated file after creating it.\n", sp,
 	 "|-od: to open up the created file's directory after it's been created.\n", sp,
-	 "|-p: to provide a custom ABSOLUTE path for the program to create the file in.\n"
+	 "|-p: to provide a custom ABSOLUTE path for the program to create the file in.\n", sp,
+	 "  |- MONTECARLO @_@ \\@w@/ Q_Q - https://github.com/Ali-Umut-Karaca/FileCreationUtil.git -\n"
 	 );
   printf("%s~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%s",COLOR_CYAN,COLOR_RESET);
   exit(1);

@@ -5,5 +5,8 @@
 *.o
 *.obj
 
+# Ignore EMACS temp Edit file
+*.c#
+
 # Ignore PowerShell scripts (handled via GitHub Releases)
 *.ps1
