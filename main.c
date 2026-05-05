@@ -31,14 +31,15 @@ void printHelpScreen();
 #define COLOR_YELLOW  "\033[0;33m"
 #define COLOR_CYAN    "\033[0;36m"
 #define COLOR_RESET   "\033[0m"
-#define TYPE "e"
-#define INIT "i"
-#define NAME "n"
-#define PATH "p"
-#define OF "of"
-#define OD "od"
-#define HELP "help"
-#define ARGUMENT_COUNT 7
+#define TYPE "e" //Extension
+#define INIT "i" //Inýtialization
+#define NAME "n" //Name
+#define PATH "p" //CustomPath
+#define OF "of" //Open File
+#define OD "od" //Open Directory
+#define HELP "help" //Help
+#define DOPEN "dof" //Don't Open File -> 04.05.2026
+#define ARGUMENT_COUNT 8
 #define MAX_PATH_LENGTH 1024
 #define MAX_ARGUMENT_LENGTH 2048
 //
@@ -49,6 +50,7 @@ int debugFlag = 0; // 1 is on, 0 is off
 int pathFlag = 0; // If the path has been set by the user specifically, turn the bit to 1
 int isOpenFile = 0; // If this flag is set, open up the file that's just been created. command: -of
 int isOpenDirectory = 0; // Flag for directory opening on -do command 
+int isDOF = 0; // Don't open file flag
 int state = 0; //0 -> Name, 1-> extention, 2-> initialization
 int realizedArgumentCount = 0;
 int argumentCounter = 0;
@@ -151,6 +153,9 @@ int main (int argc, char **args){
             debuggerS("I worked for HELP","",debugFlag);
 	    printHelpScreen();
         }
+	else if(strcmp(DOPEN, argumentMap[i].key) == 0){
+	  isDOF = 1;
+	}
         else {
             printf("%sWarning: Unknown argument key %s'%s' %signored.%s\n", COLOR_YELLOW,
 		   COLOR_RESET,
@@ -168,11 +173,13 @@ int main (int argc, char **args){
         writeCreateFile(""); 
     }
      
-    printf("\n%s--- Final Configuration ---%s\n",COLOR_CYAN,COLOR_RESET);
-    printf("Name: %s'%s'%s\n",COLOR_CYAN, fileInfo.name, COLOR_RESET);
-    printf("Extension: %s'%s'%s\n",COLOR_CYAN, fileInfo.extention, COLOR_RESET);
-    printf("Path = %s'%s'%s\n", COLOR_CYAN, fullPath, COLOR_RESET); //Print the whole file path to the terminal for the user to see.
 
+     if(isDOF == 0){
+       printf("\n%s--- Final Configuration ---%s\n",COLOR_CYAN,COLOR_RESET);
+       printf("Name: %s'%s'%s\n",COLOR_CYAN, fileInfo.name, COLOR_RESET);
+       printf("Extension: %s'%s'%s\n",COLOR_CYAN, fileInfo.extention, COLOR_RESET);
+       printf("Path = %s'%s'%s\n", COLOR_CYAN, fullPath, COLOR_RESET); //Print the whole file path to the terminal for the user to see.
+     }
 
    
     return 0;
@@ -264,9 +271,17 @@ void writeCreateFile(char *text){
     }
 
     strcat(currentDirectory,"\\"); // Add the '\' at the end of the Current Directory Path
+    
+    strcpy(currentDir,currentDirectory); // Copy the full path to the DIRECTORY for later use. strcpy needed for null terminator.
+    //currentDir[strlen(currentDirectory)] = '\0';
+    
 
-    strncpy(currentDir,currentDirectory,strlen(currentDirectory)); // Copy the full path to the DIRECTORY for later use
-    //strcat(currentDir,"\0");
+    if(isDOF == 1 && isOpenDirectory == 1){
+      debuggerS("curDir", currentDir,1);
+      printf("Opening Directory...\n");
+      openDirectory(currentDir);
+      exit(0);
+    }
 
     strcpy(fullPath,strcat(currentDirectory,fileInfo.fullName)); // First attach fullName to currentDirectory and then Copy the new string to fullPath
 
@@ -280,6 +295,7 @@ void writeCreateFile(char *text){
     // printf("\n fileNameCount In Func: %d\n", fileNameCount);
 
     int pathLength = strlen(currentDir);
+
     FILE *fp = fopen(fullPath,"a+"); // Open the file in Append+ mode.
 
     if(fileNameCount >255){
@@ -294,12 +310,11 @@ void writeCreateFile(char *text){
         printf("\n%sTHERE WAS AN ERROR OPENING / CREATING THE FILE%s\n",COLOR_RED,COLOR_RESET);
 	exit(-1);
     }
+    else{
+      fprintf(fp, text); // Put the text into the file
 
-   
-
-    fprintf(fp, text); // Put the text into the file
-
-    fclose(fp); // Close off the file
+      fclose(fp); // Close off the file
+    }
 
     if(isOpenDirectory == 1)
       openDirectory(currentDir); //Change the state variable, add -of, -od difference.
@@ -321,7 +336,7 @@ int openDirectory(char *path){
 
     // ShellExecute returns a value greater than 32 if it succeeds
     if ((INT_PTR)result <= 32) {
-        printf("%sFailed to open directory.%s\n",COLOR_RED,COLOR_RESET);
+      printf("%sFailed to open directory. CODE: %d%s\n",COLOR_RED,(int)result,COLOR_RESET);
         return -1;
     }
 
@@ -427,12 +442,13 @@ int debuggerD(int debugInfo, int shouldPrint){
 void printHelpScreen(){
   char *sp = "-\n";
   printf("\n%s~~~~~~~~~~~~~~~COMMANDS AVAILABLE FOR USE~~~~~~~~~~~~~~~%s\n",COLOR_CYAN,COLOR_RESET);
-  printf("|-help: to pull up this documentation\n|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s", sp,
+  printf("|-help: to pull up this documentation\n|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s|%s%s", sp,
 	 "|-n: to name the file as desired. If this field's left empty, the default name is going to be 'tmp'.\n", sp,
 	 "|-e: to give a file the desired extension. If this field's left empty, the default extension is going to be '.txt'.\n", sp,
 	 "|-i: to give a file the desired initialization. It will create the file and write in it the provided text. (Limit: 1024 characters)\n", sp,
 	 "|-of: to open up the crated file after creating it.\n", sp,
 	 "|-od: to open up the created file's directory after it's been created.\n", sp,
+	 "|-dof: to not create a file, I use it to navigate the folders from the cmd and open directories in the GUI when I need to.\n", sp,
 	 "|-p: to provide a custom ABSOLUTE path for the program to create the file in.\n", sp,
 	 "  |- MONTECARLO @_@ \\@w@/ Q_Q - https://github.com/Ali-Umut-Karaca/FileCreationUtil.git -\n"
 	 );
