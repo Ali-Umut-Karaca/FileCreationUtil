@@ -277,7 +277,7 @@ void writeCreateFile(char *text){
     
 
     if(isDOF == 1 && isOpenDirectory == 1){
-      debuggerS("curDir", currentDir,1);
+      debuggerS("curDir", currentDir,debugFlag);
       printf("Opening Directory...\n");
       openDirectory(currentDir);
       exit(0);
