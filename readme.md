@@ -2,6 +2,11 @@ I have decided to write this little project because windows wouldn't let me crea
 
 I have used a bunch of different things in this program, such as a poor man's hash map or a tiny tokenizer which makes tokens and  then assigns these tokens with their respective meanings using the map we have. I tried to build the architecture to specifically be very fast and lightweight as much as I can. Since speed is of the essence, I don't do any Run-time allocations, there could be some memory overhead that Might happen. Given, it is in insignificant amounts. 
 
+# <ins> IMPORTANT:</ins>
+If you don't have all script executions enabled, you can run this command to allow it only once on the cli
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~COMMAND~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # <ins> UPDATE:</ins>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~UPDATE~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
